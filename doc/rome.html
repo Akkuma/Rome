@@ -1,0 +1,132 @@
+<!DOCTYPE html><html lang="en"><head><title>rome</title></head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0"><meta name="groc-relative-root" content=""><meta name="groc-document-path" content="rome"><meta name="groc-project-path" content="rome.js"><link rel="stylesheet" type="text/css" media="all" href="assets/style.css"><script type="text/javascript" src="assets/behavior.js"></script><body><div id="meta"><div class="file-path">rome.js</div></div><div id="document"><div class="segment"><div class="code"><div class="wrapper"><span class="p">(</span><span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+  <span class="kd">function</span> <span class="nx">nope</span><span class="p">(){}</span>
+  
+  <span class="kd">function</span> <span class="nx">Rome</span><span class="p">()</span> <span class="p">{}</span>
+
+  <span class="c1">//Potential for supporting multiple registries within Rome?</span>
+  <span class="kd">function</span> <span class="nx">Registry</span><span class="p">()</span> <span class="p">{</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">componentsLookup</span> <span class="o">=</span> <span class="p">{};</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">components</span> <span class="o">=</span> <span class="p">[];</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">instances</span> <span class="o">=</span> <span class="p">{};</span>  
+  <span class="p">}</span>
+
+  <span class="kd">var</span> <span class="nx">self</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
+  <span class="nx">Registry</span><span class="p">.</span><span class="nx">prototype</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="nx">findComponent</span><span class="o">:</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">name</span><span class="p">)</span> <span class="p">{</span>
+      <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">componentsLookup</span><span class="p">[</span><span class="nx">name</span><span class="p">]</span> <span class="o">||</span> <span class="k">this</span><span class="p">.</span><span class="nx">componentsLookup</span><span class="p">[</span><span class="nx">name</span><span class="p">.</span><span class="nx">name</span><span class="p">];</span>
+    <span class="p">},</span>
+    <span class="nx">addComponent</span><span class="o">:</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">component</span><span class="p">)</span> <span class="p">{</span>
+      <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">componentsLookup</span><span class="p">[</span><span class="nx">component</span><span class="p">.</span><span class="nx">name</span><span class="p">])</span> <span class="k">return</span><span class="p">;</span>
+
+      <span class="k">this</span><span class="p">.</span><span class="nx">components</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">component</span><span class="p">);</span>
+      <span class="k">this</span><span class="p">.</span><span class="nx">componentsLookup</span><span class="p">[</span><span class="nx">component</span><span class="p">.</span><span class="nx">name</span><span class="p">]</span> <span class="o">=</span> <span class="nx">component</span><span class="p">;</span>
+    <span class="p">},</span>
+    <span class="nx">findInstance</span><span class="o">:</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">root</span><span class="p">)</span> <span class="p">{</span>
+      <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">instances</span><span class="p">[</span><span class="nx">root</span><span class="p">];</span>
+    <span class="p">},</span>
+    <span class="nx">addInstance</span><span class="o">:</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">root</span><span class="p">,</span> <span class="nx">instance</span><span class="p">)</span> <span class="p">{</span>
+      <span class="k">this</span><span class="p">.</span><span class="nx">instances</span><span class="p">[</span><span class="nx">root</span><span class="p">]</span> <span class="o">=</span> <span class="nx">instance</span><span class="p">;</span>
+    <span class="p">}</span>
+  <span class="p">};</span>
+
+  <span class="kd">var</span> <span class="nx">reg</span> <span class="o">=</span> <span class="nx">Rome</span><span class="p">.</span><span class="nx">Registry</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Registry</span><span class="p">();</span>
+
+  <span class="c1">//@TODO add setter to manipulate $ if set later defineProperty</span>
+  <span class="kd">var</span> <span class="nx">$</span> <span class="o">=</span> <span class="nx">Rome</span><span class="p">.</span><span class="nx">$</span> <span class="o">=</span> <span class="nx">self</span><span class="p">.</span><span class="nx">$</span><span class="p">;</span></div></div></div><div class="segment"><div class="comments"><div class="wrapper"><p>Strategies are a minimal abstraction/transformation layer
+that will allow users to replace the OOBE of Rome.</p></div></div><div class="code"><div class="wrapper">  <span class="nx">Rome</span><span class="p">.</span><span class="nx">Strategies</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="nx">mixin</span><span class="o">:</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">obj</span><span class="p">,</span> <span class="nx">mixin</span><span class="p">)</span> <span class="p">{</span>
+      <span class="nx">mixin</span><span class="p">(</span><span class="nx">obj</span><span class="p">);</span>
+    <span class="p">}</span>
+  <span class="p">};</span></div></div></div><div class="segment"><div class="comments"><div class="wrapper"><p>The foundation for all components provided by Rome.
+Allows users to provide a new foundation for functionality they want baked in.</p></div></div><div class="code"><div class="wrapper">  <span class="nx">Rome</span><span class="p">.</span><span class="nx">Foundation</span> <span class="o">=</span> <span class="p">(</span><span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">destroy</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+      <span class="k">this</span><span class="p">.</span><span class="nx">$root</span><span class="p">.</span><span class="nx">remove</span><span class="p">();</span>
+    <span class="p">};</span>
+
+    <span class="k">return</span> <span class="kd">function</span> <span class="nx">Foundation</span><span class="p">(</span><span class="nx">obj</span><span class="p">)</span> <span class="p">{</span>
+      <span class="kd">var</span> <span class="nx">proto</span> <span class="o">=</span> <span class="nx">obj</span><span class="p">.</span><span class="nx">prototype</span><span class="p">;</span>
+      <span class="nx">proto</span><span class="p">.</span><span class="nx">destroy</span> <span class="o">=</span> <span class="nx">detroy</span><span class="p">;</span>
+    <span class="p">};</span>
+  <span class="p">})();</span></div></div></div><div class="segment"><div class="comments"><div class="wrapper"><p>Before you can erect a component you must plan for it.
+The base component is the function you want to become a Rome component.
+The mixins are all the functionality you want to enhance the function with.</p></div></div><div class="code"><div class="wrapper">  <span class="nx">Rome</span><span class="p">.</span><span class="nx">plan</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">baseComponent</span><span class="p">,</span> <span class="nx">mixins</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">reg</span><span class="p">.</span><span class="nx">addComponent</span><span class="p">(</span><span class="nx">baseComponent</span><span class="p">);</span>
+
+    <span class="nx">mixins</span> <span class="o">=</span> <span class="nx">mixins</span><span class="p">.</span><span class="nx">length</span> <span class="o">?</span> <span class="nx">mixins</span> <span class="o">||</span> <span class="p">[</span><span class="nx">mixins</span><span class="p">];</span></div></div></div><div class="segment"><div class="comments"><div class="wrapper"><p>We always add Rome.Foundation for common functionality in components</p></div></div><div class="code"><div class="wrapper">    <span class="nx">mixins</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">Rome</span><span class="p">.</span><span class="nx">Foundation</span><span class="p">);</span>
+    <span class="k">for</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="nx">len</span> <span class="o">=</span> <span class="nx">mixins</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">len</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+      <span class="kd">var</span> <span class="nx">mixin</span> <span class="o">=</span> <span class="nx">mixins</span><span class="p">[</span><span class="nx">i</span><span class="p">];</span>
+
+      <span class="k">if</span> <span class="p">(</span><span class="k">typeof</span> <span class="nx">mixin</span> <span class="o">==</span> <span class="s1">&#39;string&#39;</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">mixin</span> <span class="o">=</span> <span class="nx">reg</span><span class="p">.</span><span class="nx">findComponent</span><span class="p">(</span><span class="nx">mixin</span><span class="p">);</span>
+      <span class="p">}</span>
+
+      <span class="nx">Rome</span><span class="p">.</span><span class="nx">Strategies</span><span class="p">.</span><span class="nx">mixin</span><span class="p">(</span><span class="nx">baseComponent</span><span class="p">,</span> <span class="nx">mixin</span><span class="p">);</span>
+    <span class="p">}</span></div></div></div><div class="segment"><div class="comments"><div class="wrapper"><p>If Rome has already been built we want to instantly erect the newly planned component</p></div></div><div class="code"><div class="wrapper">    <span class="nx">wasRomeBuilt</span> <span class="o">&amp;&amp;</span> <span class="nx">erectInstances</span><span class="p">(</span><span class="nx">$</span><span class="p">(</span><span class="s1">&#39;[data-rome=&quot;&#39;</span> <span class="o">+</span> <span class="nx">baseComponent</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;&quot;]&#39;</span><span class="p">));</span>
+  <span class="p">};</span>
+
+  <span class="kd">function</span> <span class="nx">erectInstances</span><span class="p">(</span><span class="nx">$components</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">for</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="nx">len</span> <span class="o">=</span> <span class="nx">$components</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">len</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+      <span class="nx">Rome</span><span class="p">.</span><span class="nx">erect</span><span class="p">(</span><span class="nx">$components</span><span class="p">[</span><span class="nx">i</span><span class="p">]);</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+
+  <span class="kd">var</span> <span class="nx">wasRomeBuilt</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+  <span class="nx">Rome</span><span class="p">.</span><span class="nx">build</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+    <span class="c1">//@TODO: Remove DOM dependency - perhaps some sort of dependency analysis instead?</span>
+    <span class="nx">erectInstances</span><span class="p">(</span><span class="nx">$</span><span class="p">(</span><span class="s1">&#39;[data-rome]&#39;</span><span class="p">));</span>
+
+    <span class="nx">wasRomeBuilt</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+  <span class="p">};</span>
+
+  <span class="nx">Rome</span><span class="p">.</span><span class="nx">erect</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">root</span><span class="p">)</span> <span class="p">{</span>
+    
+    <span class="kd">function</span> <span class="nx">Component</span><span class="p">(</span><span class="nx">root</span><span class="p">)</span> <span class="p">{</span>
+      <span class="k">this</span><span class="p">.</span><span class="nx">root</span> <span class="o">=</span> <span class="nx">root</span><span class="p">;</span>
+      <span class="k">this</span><span class="p">.</span><span class="nx">$root</span> <span class="o">=</span> <span class="nx">$</span><span class="p">(</span><span class="nx">root</span><span class="p">);</span>
+    <span class="p">}</span>
+    
+    <span class="nx">Rome</span><span class="p">.</span><span class="nx">Strategies</span><span class="p">.</span><span class="nx">mixin</span><span class="p">(</span><span class="nx">reg</span><span class="p">.</span><span class="nx">find</span><span class="p">(</span><span class="nx">root</span><span class="p">.</span><span class="nx">getAttribute</span><span class="p">(</span><span class="s1">&#39;data-rome&#39;</span><span class="p">)),</span> <span class="nx">Component</span><span class="p">);</span>
+
+    <span class="nx">reg</span><span class="p">.</span><span class="nx">addInstance</span><span class="p">(</span><span class="nx">root</span><span class="p">,</span> <span class="k">new</span> <span class="nx">Component</span><span class="p">(</span><span class="nx">root</span><span class="p">));</span>
+  <span class="p">};</span>
+
+  <span class="c1">//@TODO: Global PubSub?</span>
+  <span class="nx">Rome</span><span class="p">.</span><span class="nx">Empire</span><span class="p">;</span>
+  <span class="c1">//@TODO: Routing?</span>
+  <span class="nx">Rome</span><span class="p">.</span><span class="nx">Roads</span><span class="p">;</span>
+
+  <span class="c1">//@TODO support AMD/Common</span>
+  <span class="k">this</span><span class="p">.</span><span class="nx">Rome</span> <span class="o">=</span> <span class="nx">Rome</span><span class="p">;</span>
+<span class="p">})();</span>
+
+
+
+<span class="kd">var</span> <span class="nx">circle</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+  <span class="k">this</span><span class="p">.</span><span class="nx">area</span>
+<span class="p">}</span>
+
+<span class="nx">circle</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="nx">Obj</span><span class="p">.</span><span class="nx">prototype</span><span class="p">)</span>
+
+<span class="kd">var</span> <span class="nx">asCircle</span> <span class="o">=</span> <span class="p">(</span><span class="nx">func</span> <span class="p">()</span> <span class="p">{</span>
+  <span class="kd">var</span> <span class="nx">area</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(){</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">radius</span> <span class="o">*</span> <span class="k">this</span><span class="p">.</span><span class="nx">pi</span><span class="p">;</span>
+  <span class="p">};</span>
+
+  <span class="k">return</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">area</span> <span class="o">=</span> <span class="nx">area</span>
+  <span class="p">}</span>
+<span class="p">})()</span>
+
+<span class="kd">var</span> <span class="nx">area</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(){}</span>
+<span class="nx">asCircle</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+  <span class="k">this</span><span class="p">.</span><span class="nx">area</span> <span class="o">=</span> <span class="nx">area</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kd">function</span> <span class="nx">Circle</span><span class="p">(</span><span class="nx">radius</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">this</span><span class="p">.</span><span class="nx">radius</span> <span class="o">=</span> <span class="nx">radius</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="nx">asCircle</span><span class="p">(</span><span class="nx">Circle</span><span class="p">);</span>
+
+<span class="kd">var</span> <span class="nx">c</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Circle</span><span class="p">(</span><span class="mi">4</span><span class="p">);</span>
+<span class="nx">c</span><span class="p">.</span><span class="nx">area</span><span class="p">()</span></div></div></div></div></body></html>
