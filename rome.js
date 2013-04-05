@@ -116,37 +116,3 @@
 	//@TODO support AMD/Common
 	this.Rome = Rome;
 })();
-
-
-
-var circle = function () {
-	this.area
-}
-
-circle.call(Obj.prototype)
-
-var asCircle = (func () {
-	var area = function (){
-		this.radius * this.pi;
-	};
-
-	return function () {
-		this.area = area
-	}
-})()
-
-var area = function (){}
-asCircle = function () {
-	this.area = area;
-}
-
-function Circle(radius) {
-	this.radius = radius;
-}
-
-asCircle(Circle);
-
-var c = new Circle(4);
-c.area()
-
-

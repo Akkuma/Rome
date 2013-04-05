@@ -96,36 +96,4 @@ The <code>mixins</code> is an array of all the functionality you want to enhance
 
   <span class="c1">//@TODO support AMD/Common</span>
   <span class="k">this</span><span class="p">.</span><span class="nx">Rome</span> <span class="o">=</span> <span class="nx">Rome</span><span class="p">;</span>
-<span class="p">})();</span>
-
-
-
-<span class="kd">var</span> <span class="nx">circle</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
-  <span class="k">this</span><span class="p">.</span><span class="nx">area</span>
-<span class="p">}</span>
-
-<span class="nx">circle</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="nx">Obj</span><span class="p">.</span><span class="nx">prototype</span><span class="p">)</span>
-
-<span class="kd">var</span> <span class="nx">asCircle</span> <span class="o">=</span> <span class="p">(</span><span class="nx">func</span> <span class="p">()</span> <span class="p">{</span>
-  <span class="kd">var</span> <span class="nx">area</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(){</span>
-    <span class="k">this</span><span class="p">.</span><span class="nx">radius</span> <span class="o">*</span> <span class="k">this</span><span class="p">.</span><span class="nx">pi</span><span class="p">;</span>
-  <span class="p">};</span>
-
-  <span class="k">return</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
-    <span class="k">this</span><span class="p">.</span><span class="nx">area</span> <span class="o">=</span> <span class="nx">area</span>
-  <span class="p">}</span>
-<span class="p">})()</span>
-
-<span class="kd">var</span> <span class="nx">area</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(){}</span>
-<span class="nx">asCircle</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
-  <span class="k">this</span><span class="p">.</span><span class="nx">area</span> <span class="o">=</span> <span class="nx">area</span><span class="p">;</span>
-<span class="p">}</span>
-
-<span class="kd">function</span> <span class="nx">Circle</span><span class="p">(</span><span class="nx">radius</span><span class="p">)</span> <span class="p">{</span>
-  <span class="k">this</span><span class="p">.</span><span class="nx">radius</span> <span class="o">=</span> <span class="nx">radius</span><span class="p">;</span>
-<span class="p">}</span>
-
-<span class="nx">asCircle</span><span class="p">(</span><span class="nx">Circle</span><span class="p">);</span>
-
-<span class="kd">var</span> <span class="nx">c</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Circle</span><span class="p">(</span><span class="mi">4</span><span class="p">);</span>
-<span class="nx">c</span><span class="p">.</span><span class="nx">area</span><span class="p">()</span></div></div></div></div></body></html>
+<span class="p">})();</span></div></div></div></div></body></html>
