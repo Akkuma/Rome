@@ -56,8 +56,8 @@
 	})();
 
 	// Before you can erect a component you must plan for it.
-	// The base component is the function you want to become a Rome component.
-	// The mixins are all the functionality you want to enhance the function with.
+	// The `baseComponent` is the function you want to become a Rome component.
+	// The `mixins` is an array of all the functionality you want to enhance the `baseComponent` with.
 	Rome.plan = function (baseComponent, mixins) {
 		reg.addComponent(baseComponent);
 
@@ -86,6 +86,7 @@
 	}
 
 	var wasRomeBuilt = false;
+	// After you're done planning all your components or simply want to start erecting your components.
 	Rome.build = function () {
 		//@TODO: Remove DOM dependency - perhaps some sort of dependency analysis instead?
 		erectInstances($('[data-rome]'));
@@ -93,6 +94,7 @@
 		wasRomeBuilt = true;
 	};
 
+	//Should this even be publicly exposed?
 	Rome.erect = function (root) {
 		
 		function Component(root) {

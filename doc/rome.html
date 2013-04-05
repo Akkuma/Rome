@@ -48,8 +48,8 @@ Allows users to provide a new foundation for functionality they want baked in.</
       <span class="nx">proto</span><span class="p">.</span><span class="nx">destroy</span> <span class="o">=</span> <span class="nx">detroy</span><span class="p">;</span>
     <span class="p">};</span>
   <span class="p">})();</span></div></div></div><div class="segment"><div class="comments"><div class="wrapper"><p>Before you can erect a component you must plan for it.
-The base component is the function you want to become a Rome component.
-The mixins are all the functionality you want to enhance the function with.</p></div></div><div class="code"><div class="wrapper">  <span class="nx">Rome</span><span class="p">.</span><span class="nx">plan</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">baseComponent</span><span class="p">,</span> <span class="nx">mixins</span><span class="p">)</span> <span class="p">{</span>
+The <code>baseComponent</code> is the function you want to become a Rome component.
+The <code>mixins</code> is an array of all the functionality you want to enhance the <code>baseComponent</code> with.</p></div></div><div class="code"><div class="wrapper">  <span class="nx">Rome</span><span class="p">.</span><span class="nx">plan</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">baseComponent</span><span class="p">,</span> <span class="nx">mixins</span><span class="p">)</span> <span class="p">{</span>
     <span class="nx">reg</span><span class="p">.</span><span class="nx">addComponent</span><span class="p">(</span><span class="nx">baseComponent</span><span class="p">);</span>
 
     <span class="nx">mixins</span> <span class="o">=</span> <span class="nx">mixins</span><span class="p">.</span><span class="nx">length</span> <span class="o">?</span> <span class="nx">mixins</span> <span class="o">||</span> <span class="p">[</span><span class="nx">mixins</span><span class="p">];</span></div></div></div><div class="segment"><div class="comments"><div class="wrapper"><p>We always add Rome.Foundation for common functionality in components</p></div></div><div class="code"><div class="wrapper">    <span class="nx">mixins</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">Rome</span><span class="p">.</span><span class="nx">Foundation</span><span class="p">);</span>
@@ -70,14 +70,14 @@ The mixins are all the functionality you want to enhance the function with.</p><
     <span class="p">}</span>
   <span class="p">}</span>
 
-  <span class="kd">var</span> <span class="nx">wasRomeBuilt</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
-  <span class="nx">Rome</span><span class="p">.</span><span class="nx">build</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+  <span class="kd">var</span> <span class="nx">wasRomeBuilt</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span></div></div></div><div class="segment"><div class="comments"><div class="wrapper"><p>After you're done planning all your components or simply want to start erecting your components.</p></div></div><div class="code"><div class="wrapper">  <span class="nx">Rome</span><span class="p">.</span><span class="nx">build</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
     <span class="c1">//@TODO: Remove DOM dependency - perhaps some sort of dependency analysis instead?</span>
     <span class="nx">erectInstances</span><span class="p">(</span><span class="nx">$</span><span class="p">(</span><span class="s1">&#39;[data-rome]&#39;</span><span class="p">));</span>
 
     <span class="nx">wasRomeBuilt</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
   <span class="p">};</span>
 
+  <span class="c1">//Should this even be publicly exposed?</span>
   <span class="nx">Rome</span><span class="p">.</span><span class="nx">erect</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">root</span><span class="p">)</span> <span class="p">{</span>
     
     <span class="kd">function</span> <span class="nx">Component</span><span class="p">(</span><span class="nx">root</span><span class="p">)</span> <span class="p">{</span>
