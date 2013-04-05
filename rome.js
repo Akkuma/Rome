@@ -100,7 +100,8 @@
 			this.$root = $(root);
 		}
 		
-		Rome.Strategies.mixin(reg.find(root.getAttribute('data-rome')), Component);
+		// Finally adds in everything from the base component's `prototype` before creating a new component instance
+		Rome.Strategies.mixin(Component, reg.find(root.getAttribute('data-rome')));
 
 		reg.addInstance(root, new Component(root));
 	};
