@@ -10,22 +10,26 @@
 		this.instances = {};	
 	}
 
+	// Should be a reference to the window object for now
 	var self = this;
 	Registry.prototype = {
 		findComponent: function (name) {
 			return this.componentsLookup[name] || this.componentsLookup[name.name];
 		},
-		addComponent: function (component) {
-			if (this.componentsLookup[component.name]) return;
+		addComponent: function (base, component, mixins) {
+			var name = component.name || component;
+			if (this.componentsLookup[name]) return;
 
-			this.components.push(component);
-			this.componentsLookup[component.name] = component;
+			//this.components.push(component);
+			this.componentsLookup[name] = { base: base, mixins: mixins };
 		},
+		//@TODO: Change to store on the actual element rather than in memory?
 		findInstance: function (root) {
-			return this.instances[root];
+			return root._rome || this.instances[root];
 		},
 		addInstance: function (root, instance) {
 			this.instances[root] = instance;
+			root._rome = { component: instance };
 		}
 	};
 
@@ -51,20 +55,24 @@
 
 		return function Foundation(obj) {
 			var proto = obj.prototype;
-			proto.destroy = detroy;
+			proto.destroy = destroy;
 		};
 	})();
 
 	// Before you can erect a component you must plan for it.
-	// The `baseComponent` is the function you want to become a Rome component.
-	// The `mixins` is an array of all the functionality you want to enhance the `baseComponent` with.
-	Rome.plan = function (baseComponent, mixins) {
-		reg.addComponent(baseComponent);
-
-		mixins = mixins.length ? mixins || [mixins];
+	// The `mixins` is an array of all the functionality you want in a component.
+	// The first mixin is treated as the `baseComponent`
+	Rome.plan = function (mixins) {
+		// An anonymous function to merge all mixins into, so that the baseComponent 
+		// can be the last mixin merged into the base
+		var base = function () {},
+			baseComponent = name || mixins.shift();
 
 		// We always add Rome.Foundation for common functionality in components
+		// and let the baseComponent reign supreme
 		mixins.push(Rome.Foundation);
+		mixins.push(baseComponent);
+
 		for	(var i = 0, len = mixins.length; i < len; i++) {
 			var mixin = mixins[i];
 
@@ -72,8 +80,10 @@
 				mixin = reg.findComponent(mixin);
 			}
 
-			Rome.Strategies.mixin(baseComponent, mixin);
+			Rome.Strategies.mixin(base, mixin);
 		}
+
+		reg.addComponent(base, baseComponent, mixins);
 
 		// If Rome has already been built we want to instantly erect the newly planned component
 		wasRomeBuilt && erectInstances($('[data-rome="' + baseComponent.name + '"]'));
@@ -89,6 +99,7 @@
 	// After you're done planning all your components or simply want to start erecting your components.
 	Rome.build = function () {
 		//@TODO: Remove DOM dependency - perhaps some sort of dependency analysis instead?
+		//Configurable selector would be useful + configurable data attributes
 		erectInstances($('[data-rome]'));
 
 		wasRomeBuilt = true;
@@ -96,16 +107,28 @@
 
 	//Should this even be publicly exposed?
 	Rome.erect = function (root) {
-		
-		function Component(root) {
-			this.root = root;
-			this.$root = $(root);
-		}
-		
-		// Finally adds in everything from the base component's `prototype` before creating a new component instance
-		Rome.Strategies.mixin(Component, reg.find(root.getAttribute('data-rome')));
+		var storedComponent = reg.findComponent(root.getAttribute('data-rome'));
 
-		reg.addInstance(root, new Component(root));
+		if (!storedComponent.cachedComponent) {
+			function Component(root) {
+				this.root = root;
+				this.$root = $(root);
+			
+				var mixins = storedComponent.mixins;
+				for (var i = 0, len = mixins.length; i < len; i++) {
+					var mixinName = mixins[i].name;
+					this[mixinName] && this[mixinName]();
+				};
+			}
+			
+			// Finally adds in everything from the base component's `prototype` before creating a new component instance
+			Component.prototype = storedComponent.base.prototype;
+			// Cache this Rome.Component, so that creating numerous instances doesn't require recreating the function
+			storedComponent.cachedComponent = Component;
+		}
+
+		//Need mixin initialization strategy?
+		reg.addInstance(root, new storedComponent.cachedComponent(root));
 	};
 
 	//@TODO: Global PubSub?
