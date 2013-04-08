@@ -66,7 +66,7 @@
 		// An anonymous function to merge all mixins into, so that the baseComponent 
 		// can be the last mixin merged into the base
 		var base = function () {},
-			baseComponent = name || mixins.shift();
+			baseComponent = mixins.shift();
 
 		// We always add Rome.Foundation for common functionality in components
 		// and let the baseComponent reign supreme
@@ -114,6 +114,7 @@
 				this.root = root;
 				this.$root = $(root);
 			
+				// Executes each mixin's constructor function, if one exists, which is based on the mixin's name
 				var mixins = storedComponent.mixins;
 				for (var i = 0, len = mixins.length; i < len; i++) {
 					var mixinName = mixins[i].name;
