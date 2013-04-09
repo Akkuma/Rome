@@ -171,6 +171,9 @@
 			storedComponent.cachedComponent = Component;
 		}
 
+        // Prevent double-initialization of this element.
+        root.removeAttribute('data-rome');
+        
 		//Need mixin initialization strategy?
 		reg.addInstance(root, romeComponentName, new storedComponent.cachedComponent(root));
 	};
