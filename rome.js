@@ -16,10 +16,10 @@
 	var self = this;
 	Registry.prototype = {
 		findComponent: function (name) {
-			return this.componentsLookup[name] || this.componentsLookup[name.name];
+			return this.componentsLookup[name];
 		},
 		addComponent: function (base, component, mixins) {
-			var name = component.name || component //@TODO: Support IE through function name regex;
+			var name = Rome.getFnName(component);
 			if (this.componentsLookup[name]) return;
 
 			//this.components.push(component);
@@ -94,6 +94,10 @@
 		};
 	})();
 
+    Rome.getFnName = function (fn) {
+        return fn.name || (fn.name = fn.toString().match(/^function\s*([^\s(]+)/)[1]);
+    };
+
 	// Before you can erect a component you must plan for it.
 	// The `mixins` is an array of all the functionality you want in a component.
 	// The first mixin is treated as the `baseComponent`
@@ -123,7 +127,7 @@
 
 		// If Rome has already been built we want to instantly erect the newly planned component
 		//@TODO: Determine whether this is even needed with MutationObservers
-		//wasRomeBuilt && erectInstances($('[data-rome="' + baseComponent.name + '"]'));
+		//wasRomeBuilt && erectInstances($('[data-rome="' + Rome.getFnName(baseComponent) + '"]'));
 	};
 
 	function erectInstances($components) {
@@ -156,7 +160,7 @@
 				// Executes each mixin's constructor function, if one exists, which is based on the mixin's name
 				var mixins = storedComponent.mixins;
 				for (var i = 0, len = mixins.length; i < len; i++) {
-					var mixinName = mixins[i].name;
+					var mixinName = Rome.getFnName(mixins[i]);
 					this[mixinName] && this[mixinName]();
 				};
 			}
