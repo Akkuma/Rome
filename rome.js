@@ -6,8 +6,10 @@
 	//Potential for supporting multiple registries within Rome?
 	function Registry() {
 		this.componentsLookup = {};
+		/*
 		this.components = [];
 		this.instances = {};	
+		*/
 	}
 
 	// Should be a reference to the window object for now
@@ -17,7 +19,7 @@
 			return this.componentsLookup[name] || this.componentsLookup[name.name];
 		},
 		addComponent: function (base, component, mixins) {
-			var name = component.name || component;
+			var name = component.name || component //@TODO: Support IE through function name regex;
 			if (this.componentsLookup[name]) return;
 
 			//this.components.push(component);
@@ -25,10 +27,13 @@
 		},
 		//@TODO: Change to store on the actual element rather than in memory?
 		findInstance: function (root) {
-			return root._rome || this.instances[root];
+			return root._rome //|| this.instances[root];
 		},
-		addInstance: function (root, instance) {
-			this.instances[root] = instance;
+		addInstance: function (root, componentName, instance) {
+			//@TODO: Determine whether or not we need to maintain a list of instances 
+			//or if living on the root element is good enough
+			//this.instances[componentName] || (this.instances[componentName] = [])
+			//this.instances[componentName].push(instance);
 			root._rome = { component: instance };
 		}
 	};
@@ -36,20 +41,50 @@
 	var reg = Rome.Registry = new Registry();
 
 	//@TODO add setter to manipulate $ if set later defineProperty
-	var $ = Rome.$ = self.$;
+	var $ = Rome.$ = self.jQuery || self.Zepto || self.$;
 
 	// Strategies are a minimal abstraction/transformation layer
 	// that will allow users to replace the OOBE of Rome.
 	Rome.Strategies = {
 		mixin: function (obj, mixin) {
 			mixin(obj);
+		},
+		domObserver: function () {
+			var MutationObserver = self.MutationObserver || self.WebKitMutationObserver;
+			var observer = new MutationObserver(function(mutations) {
+				for (var i = mutations.length; i >= 0; --i) {
+					var mutation = mutations[i],
+						addedNodes = mutation.addedNodes,
+						removedNodes = mutation.removedNodes;
+					
+					for (var added = addedNodes.length; i >= 0; --i) {
+						var addedNode = addedNodes[added],
+							romeComponentName = addedNode.getAttribute('data-rome');
+
+						romeComponentName && Rome.erect(addedNode, romeComponentName);
+					}
+
+					//@TODO determine if removedNodes mutation is even needed
+					/*
+					for (var removed = removedNodes.length; i >= 0; --i) { 
+						var removedNode = removedNodes[added];
+
+						removedNode._rome && removedNode._rome.component.destroy()
+					}
+					*/
+				}
+			  }); 
+ 
+ 			observer.observe(document.body, { subtree: true, childList: true });
 		}
 	};
 
 	// The foundation for all components provided by Rome.
 	// Allows users to provide a new foundation for functionality they want baked in.
 	Rome.Foundation = (function () {
-		var destroy = function () {
+		var destroy = function (isParentCleanup) {			
+			// We don't want a recursive find, so skip finding sub-components if parent initiated cleanup
+			isParentCleanup || this.$root.find('[data-rome]').each(function () { this.root._rome.component.destroy(true); });
 			this.$root.remove();
 		};
 
@@ -62,11 +97,12 @@
 	// Before you can erect a component you must plan for it.
 	// The `mixins` is an array of all the functionality you want in a component.
 	// The first mixin is treated as the `baseComponent`
-	Rome.plan = function (mixins) {
+	Rome.plan = function (baseComponent, mixins) {
 		// An anonymous function to merge all mixins into, so that the baseComponent 
 		// can be the last mixin merged into the base
-		var base = function () {},
-			baseComponent = mixins.shift();
+		var base = function () {};
+
+		mixins = mixins || [];
 
 		// We always add Rome.Foundation for common functionality in components
 		// and let the baseComponent reign supreme
@@ -86,7 +122,8 @@
 		reg.addComponent(base, baseComponent, mixins);
 
 		// If Rome has already been built we want to instantly erect the newly planned component
-		wasRomeBuilt && erectInstances($('[data-rome="' + baseComponent.name + '"]'));
+		//@TODO: Determine whether this is even needed with MutationObservers
+		//wasRomeBuilt && erectInstances($('[data-rome="' + baseComponent.name + '"]'));
 	};
 
 	function erectInstances($components) {
@@ -102,12 +139,14 @@
 		//Configurable selector would be useful + configurable data attributes
 		erectInstances($('[data-rome]'));
 
-		wasRomeBuilt = true;
+		Rome.Strategies.domObserver();
+		//wasRomeBuilt = true;
 	};
 
 	//Should this even be publicly exposed?
-	Rome.erect = function (root) {
-		var storedComponent = reg.findComponent(root.getAttribute('data-rome'));
+	Rome.erect = function (root, romeComponentName) {
+		romeComponentName = romeComponentName || root.getAttribute('data-rome');
+		var storedComponent = reg.findComponent(romeComponentName);
 
 		if (!storedComponent.cachedComponent) {
 			function Component(root) {
@@ -129,7 +168,7 @@
 		}
 
 		//Need mixin initialization strategy?
-		reg.addInstance(root, new storedComponent.cachedComponent(root));
+		reg.addInstance(root, romeComponentName, new storedComponent.cachedComponent(root));
 	};
 
 	//@TODO: Global PubSub?
