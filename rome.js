@@ -29,10 +29,10 @@
 	Registry.prototype = {
 		// Used during `Rome.erect` to get the planned component
 		findComponent: function (name) {
-			return this.componentsLookup[name] || this.componentsLookup[name.name];
+			return this.componentsLookup[name];
 		},
 		addComponent: function (base, component, mixins) {
-			var name = component.name || component //@TODO: Support IE through function name regex;
+			var name = component._rome.name;
 			if (this.componentsLookup[name]) return;
 
 			//this.components.push(component);
@@ -104,7 +104,7 @@
 
 			// All components can provide a destructor, which is modeled after C++ `~ComponentName`
 			for (var i = 0, len = this._rome.mixins.length; i < len; i++) {
-				var mixinName = this._rome.mixins[i].name;
+				var mixinName = this._rome.mixins[i]._rome.name;
 				this['~' + mixinName] && this['~' + mixinName]();
 			}
 		};
@@ -114,6 +114,23 @@
 			proto.destroy = destroy;
 		};
 	})();
+
+	var fnNameRegEx = new RegExp(/function\s+([^\s\(]+)/);
+	// We normalize the mixin name, so that in the future we don't have to call a getMixinName repeatedly
+	function setMixinName(mixin) {
+		if (mixin._rome) return;
+
+		var name = mixin.name;
+
+		// Support IE through manually setting the toString or we'll parse it out
+		// RegEx chosen based on this test http://jsperf.com/get-a-function-s-name
+		if (!name) {
+			var toString = mixin.toString();
+			name = toString.indexOf('(') != -1 ? fnNameRegEx.exec(toString)[1] : toString;
+		}
+
+		mixin._rome = { name: name };
+	}
 
 	// Before you can erect a component you must plan for it.
 	// The `mixins` is an array of all the functionality you want in a component.
@@ -129,10 +146,11 @@
 		// and let the baseComponent reign supreme
 		mixins.unshift(baseComponent, Rome.Foundation);
 
-		for	(var i = mixins.length; i >= 0; --i) {
+		for	(var i = mixins.length - 1; i >= 0; --i) {
 			var mixin = mixins[i];
 				mixin = typeof mixin != 'string' ? mixin : reg.findComponent(mixin);
 
+			setMixinName(mixin);
 			Rome.Strategies.mixin(base, mixin);
 		}
 
@@ -174,8 +192,8 @@
 				this.$root = $(root);
 			
 				// Executes each mixin's constructor function, if one exists, which is based on the mixin's name
-				for (var i = this._rome.mixins.length; i >= 0; --i) {
-					var mixinName = this._rome.mixins[i].name;
+				for (var i = this._rome.mixins.length - 1; i >= 0; --i) {
+					var mixinName = this._rome.mixins[i]._rome.name;
 					this[mixinName] && this[mixinName]();
 				};
 			}
