@@ -72,8 +72,8 @@
 			}
 
 			function removeComponent(node) {
-				node = node.target || node;
-				node._rome && node._rome.component.destroy()
+				var rome = (node.target || node)._rome;
+				rome && rome.component.destroy()
 			}
 
 			var MutationObserver = self.MutationObserver || self.WebKitMutationObserver;
@@ -102,9 +102,10 @@
 			isParentCleanup || this.$root.find('[data-rome]').each(function () { this.root._rome.component.destroy(true); });
 			this.$root.remove();
 
+			var mixins = this._rome.mixins;
 			// All components can provide a destructor, which is modeled after C++ `~ComponentName`
-			for (var i = 0, len = this._rome.mixins.length; i < len; i++) {
-				var mixinName = this._rome.mixins[i]._rome.name;
+			for (var i = 0, len = mixins.length; i < len; i++) {
+				var mixinName = mixins[i]._rome.name;
 				this['~' + mixinName] && this['~' + mixinName]();
 			}
 		};
@@ -190,10 +191,11 @@
 			function Component(root) {
 				this.root = root;
 				this.$root = $(root);
-			
+				
+				var mixins = this._rome.mixins;
 				// Executes each mixin's constructor function, if one exists, which is based on the mixin's name
-				for (var i = this._rome.mixins.length - 1; i >= 0; --i) {
-					var mixinName = this._rome.mixins[i]._rome.name;
+				for (var i = mixins.length - 1; i >= 0; --i) {
+					var mixinName = mixins[i]._rome.name;
 					this[mixinName] && this[mixinName]();
 				};
 			}
