@@ -17,7 +17,17 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
         "sourcePath": "C:\\Users\\Greg Waxman\\Documents\\Git\\Rome\\rome.js",
         "projectPath": "rome.js",
         "targetPath": "rome",
-        "title": "rome"
+        "firstHeader": {
+          "type": "heading",
+          "data": {
+            "level": 1,
+            "title": "Rome 0.2.0",
+            "slug": "rome-020",
+            "isFileHeader": true
+          },
+          "depth": 1
+        },
+        "title": "Rome 0.2.0"
       },
       "depth": 1,
       "outline": []
