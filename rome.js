@@ -174,7 +174,7 @@
 				this.$root = $(root);
 			
 				// Executes each mixin's constructor function, if one exists, which is based on the mixin's name
-				for (var i = 0, len = this._rome.mixins.length; i < len; i++) {
+				for (var i = this._rome.mixins.length; i >= 0; --i) {
 					var mixinName = this._rome.mixins[i].name;
 					this[mixinName] && this[mixinName]();
 				};
