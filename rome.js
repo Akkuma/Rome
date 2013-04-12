@@ -1,4 +1,4 @@
-// Rome 0.4.0
+// Rome 0.4.1
 // ==========
 // "Opinions are good, only when I agree with them." This is Rome's entire philosophy to development.
 
@@ -137,30 +137,19 @@
 		};
 	})();
 
-	var fnNameRegEx = new RegExp(/function\s+([^\s\(]+)/);
-	// We normalize the mixin name, so that in the future we don't have to call a getMixinName repeatedly
-	function setMixinName(mixin) {
-		if (mixin._rome) return;
-
-		var name = mixin.name;
-
-		// Support IE through manually setting the toString or we'll parse it out
-		// RegEx chosen based on this test http://jsperf.com/get-a-function-s-name
-		if (!name) {
-			var toString = mixin.toString();
-			name = toString.indexOf('(') != -1 ? fnNameRegEx.exec(toString)[1] : toString;
-		}
-
-		mixin._rome = { name: name };
-	}
-
 	// Before you can erect a component you must plan for it.
+	// `baseComponent` is what Rome will be creating instances of via `[data-rome]`.
 	// The `mixins` is an array of all the functionality you want in a component.
-	// The first mixin is treated as the `baseComponent`
-	Rome.plan = function (baseComponent, mixins) {
+	// `name` is what you want your component known as. 
+	// This must be provided if `baseComponent._rome.name` is not set.
+	// Unforuntately, minification might mangle the function name, so we had to resort to being explicit
+	Rome.plan = function (baseComponent, mixins, name) {
 		// An anonymous function to merge all mixins into, so that the baseComponent 
 		// can be the last mixin merged into the base
 		var base = function () {};
+
+		// We normalize the component name, so that in the future we don't have to call a getMixinName repeatedly
+		baseComponent._rome ||	(baseComponent._rome = { name: name });
 
 		mixins = (mixins || []).concat(strats.autoMixins);
 
@@ -171,7 +160,6 @@
 		eachReverse(mixins, function (mixin) {
 			mixin = typeof mixin != 'string' ? mixin : reg.findComponent(mixin);
 
-			setMixinName(mixin);
 			strats.mixin(base, mixin);
 		});
 
