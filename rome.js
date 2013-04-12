@@ -1,4 +1,4 @@
-// Rome 0.4.1
+// Rome 0.4.2
 // ==========
 // "Opinions are good, only when I agree with them." This is Rome's entire philosophy to development.
 
@@ -27,13 +27,13 @@
 	// `NodeList.forEach` doesn't work, so might as well make our own more efficient forEach
 	function each(arr, cb) {
 	    for (var i = 0, len = arr.length; i < len; ++i) {
-	      func(arr[i]);
+	      cb(arr[i]);
 	    }
  	}
 
  	function eachReverse(arr, cb) {
 	    for (var i = arr.length - 1; i >= 0; --i) {
-	      func(arr[i]);
+	      cb(arr[i]);
 	    }
  	}
 
@@ -98,7 +98,7 @@
 				var observer = new MutationObserver(function(mutations) {
 					eachReverse(mutations, function (mutation) {
 						eachReverse(mutation.addedNodes, addComponent);
-						eachReverse(hmutation.removedNodes, removeComponent);
+						eachReverse(mutation.removedNodes, removeComponent);
 					});
 				 }); 
 	 
