@@ -21,13 +21,13 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
           "type": "heading",
           "data": {
             "level": 1,
-            "title": "Rome 0.2.0",
-            "slug": "rome-020",
+            "title": "Rome 0.4.0",
+            "slug": "rome-040",
             "isFileHeader": true
           },
           "depth": 1
         },
-        "title": "Rome 0.2.0"
+        "title": "Rome 0.4.0"
       },
       "depth": 1,
       "outline": []

@@ -1,4 +1,4 @@
-// Rome 0.2.0
+// Rome 0.4.0
 // ==========
 // "Opinions are good, only when I agree with them." This is Rome's entire philosophy to development.
 
@@ -23,6 +23,19 @@
 		this.instances = {};
 		*/
 	}
+
+	// `NodeList.forEach` doesn't work, so might as well make our own more efficient forEach
+	function each(arr, cb) {
+	    for (var i = 0, len = arr.length; i < len; ++i) {
+	      func(arr[i]);
+	    }
+ 	}
+
+ 	function eachReverse(arr, cb) {
+	    for (var i = arr.length - 1; i >= 0; --i) {
+	      func(arr[i]);
+	    }
+ 	}
 
 	// Should be a reference to the window object for now
 	var self = this;
@@ -58,30 +71,34 @@
 
 	// Strategies are a minimal abstraction/transformation layer
 	// that will allow users to replace the OOBE of Rome.
-	Rome.Strategies = {
+	var strats = Rome.Strategies = {
 		mixin: function (obj, mixin) {
 			mixin(obj);
 		},
 
+		// These are mixins that get added to all components
+		autoMixins: [],
+
 		// Handles all DOM changes as to automatically wire-up and destroy components
 		domObserver: function () {
 			function addComponent(node) {
-				node = node.target || node;
-				var romeComponentName = node.getAttribute('data-rome');
-				romeComponentName && Rome.erect(node, romeComponentName);
+				node = node.target || node;				
+
+				var componentName = node.getAttribute && node.getAttribute('data-rome');
+				!node._rome && componentName && erectInstances($(node).find('[data-rome]'));
 			}
 
 			function removeComponent(node) {
-				var rome = (node.target || node)._rome;
-				rome && rome.component.destroy()
+				var domRomeData = (node.target || node)._rome;
+				domRomeData && domRomeData.component.destroy({ domObserved: true })
 			}
 
 			var MutationObserver = self.MutationObserver || self.WebKitMutationObserver;
 			if (MutationObserver) {
 				var observer = new MutationObserver(function(mutations) {
-					mutations.forEach(function (mutation) {
-						mutation.addedNodes.forEach(addComponent);
-						mutation.removedNodes.forEach(removeComponent);
+					eachReverse(mutations, function (mutation) {
+						eachReverse(mutation.addedNodes, addComponent);
+						eachReverse(hmutation.removedNodes, removeComponent);
 					});
 				 }); 
 	 
@@ -91,23 +108,27 @@
 				document.body.addEventListener('DOMNodeInserted', addComponent, false);
 				document.body.addEventListener('DOMNodeRemoved', removeComponent, false);
 			}
+		},
+
+		destruct: function (instance) {
+			// All components can provide a destructor, which is modeled after C++ `~ComponentName`
+			each(instance._rome.mixins, function (mixin) { instance['~' + mixin.name] && instance['~' + mixinName]() });
+		},
+
+		construct: function (instance) {
+			// Executes each mixin's constructor function, if one exists, which is based on the mixin's name
+			eachReverse(instance._rome.mixins, function (mixin) { instance[mixin.name] && instance[mixin.name](); });
 		}
 	};
 
 	// The foundation for all components provided by Rome.
 	// Allows users to provide a new foundation for functionality they want baked in.
 	Rome.Foundation = (function () {
-		var destroy = function (isParentCleanup) {			
+		var destroy = function (state) {
+			state = state || {};	
 			// We don't want a recursive find, so skip finding sub-components if parent initiated cleanup
-			isParentCleanup || this.$root.find('[data-rome]').each(function () { this.root._rome.component.destroy(true); });
-			this.$root.remove();
-
-			var mixins = this._rome.mixins;
-			// All components can provide a destructor, which is modeled after C++ `~ComponentName`
-			for (var i = 0, len = mixins.length; i < len; i++) {
-				var mixinName = mixins[i]._rome.name;
-				this['~' + mixinName] && this['~' + mixinName]();
-			}
+		 	eachReverse(this.$root.find('[data-rome]'), strats.destruct);
+			!state.domObserved && this.$root.remove();
 		};
 
 		return function Foundation(obj) {
@@ -141,19 +162,18 @@
 		// can be the last mixin merged into the base
 		var base = function () {};
 
-		mixins = mixins || [];
+		mixins = (mixins || []).concat(strats.autoMixins);
 
 		// We always add Rome.Foundation for common functionality in components
 		// and let the baseComponent reign supreme
 		mixins.unshift(baseComponent, Rome.Foundation);
 
-		for	(var i = mixins.length - 1; i >= 0; --i) {
-			var mixin = mixins[i];
-				mixin = typeof mixin != 'string' ? mixin : reg.findComponent(mixin);
+		eachReverse(mixins, function (mixin) {
+			mixin = typeof mixin != 'string' ? mixin : reg.findComponent(mixin);
 
 			setMixinName(mixin);
-			Rome.Strategies.mixin(base, mixin);
-		}
+			strats.mixin(base, mixin);
+		});
 
 		reg.addComponent(base, baseComponent, mixins);
 
@@ -163,9 +183,7 @@
 	};
 
 	function erectInstances($components) {
-		for (var i = 0, len = $components.length; i < len; i++) {
-			Rome.erect($components[i]);
-		}
+		eachReverse($components, Rome.erect);
 	}
 
 	var wasRomeBuilt = false;
@@ -178,26 +196,23 @@
 		//Configurable selector would be useful + configurable data attributes
 		erectInstances($('[data-rome]'));
 
-		Rome.Strategies.domObserver();
+		strats.domObserver();
 		wasRomeBuilt = true;
 	};
 
 	//Should this even be publicly exposed?
-	Rome.erect = function (root, romeComponentName) {
-		romeComponentName = romeComponentName || root.getAttribute('data-rome');
-		var storedComponent = reg.findComponent(romeComponentName);
+	Rome.erect = function (root) {
+		if (root._rome) return;
+
+		var romeComponentName = root.getAttribute('data-rome'),
+			storedComponent = reg.findComponent(romeComponentName);
 
 		if (!storedComponent.cachedComponent) {
 			function Component(root) {
 				this.root = root;
 				this.$root = $(root);
 				
-				var mixins = this._rome.mixins;
-				// Executes each mixin's constructor function, if one exists, which is based on the mixin's name
-				for (var i = mixins.length - 1; i >= 0; --i) {
-					var mixinName = mixins[i]._rome.name;
-					this[mixinName] && this[mixinName]();
-				};
+				strats.construct(this);
 			}
 
 			// Finally adds in everything from the base component's `prototype` before creating a new component instance
