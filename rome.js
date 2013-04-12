@@ -112,12 +112,18 @@
 
 		destruct: function (instance) {
 			// All components can provide a destructor, which is modeled after C++ `~ComponentName`
-			each(instance._rome.mixins, function (mixin) { instance['~' + mixin.name] && instance['~' + mixinName]() });
+			each(instance._rome.mixins, function (mixin) { 
+				var mixinDestructor; 
+				(mixinDestructor = instance['~' + mixin._rome.name]) && mixinDestructor();
+			});
 		},
 
 		construct: function (instance) {
 			// Executes each mixin's constructor function, if one exists, which is based on the mixin's name
-			eachReverse(instance._rome.mixins, function (mixin) { instance[mixin.name] && instance[mixin.name](); });
+			eachReverse(instance._rome.mixins, function (mixin) { 
+				var mixinConstructor;
+				(mixinConstructor = instance[mixin._rome.name]) && mixinConstructor(); 
+			});
 		}
 	};
 
@@ -148,7 +154,7 @@
 		// can be the last mixin merged into the base
 		var base = function () {};
 
-		// We normalize the component name, so that in the future we don't have to call a getMixinName repeatedly
+		// We store the component name as a static to always make it easily accessible
 		baseComponent._rome ||	(baseComponent._rome = { name: name });
 
 		mixins = (mixins || []).concat(strats.autoMixins);
