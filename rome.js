@@ -1,4 +1,4 @@
-// Rome 0.4.2
+// Rome 0.5.0
 // ==========
 // "Opinions are good, only when I agree with them." This is Rome's entire philosophy to development.
 
@@ -11,6 +11,11 @@
 // - Rome should have no dependencies, if possible, unless the library is small enough one could embed or it is so popular it is a "standard"
 
 (function () {
+	var body = document.body,
+		jQueryCompat = self.jQuery || self.Zepto,
+		// Currently even IE8 supports our use of querySelectorAll, so we'll use this internally instead
+		$ = function (selector, context) { return (context || body).querySelectorAll(selector); };
+
 	function nope(){}
 	
 	function Rome() {}
@@ -67,7 +72,7 @@
 	var reg = Rome.Registry = new Registry();
 
 	//@TODO add setter to manipulate $ if set later defineProperty
-	var $ = Rome.$ = self.jQuery || self.Zepto || self.$;
+	//var $ = Rome.$ = self.jQuery || self.Zepto || self.$;
 
 	// Strategies are a minimal abstraction/transformation layer
 	// that will allow users to replace the OOBE of Rome.
@@ -85,7 +90,7 @@
 				node = node.target || node;				
 
 				var componentName = node.getAttribute && node.getAttribute('data-rome');
-				!node._rome && componentName && erectInstances($(node).find('[data-rome]'));
+				!node._rome && componentName && erectInstances($('[data-rome]', node));
 			}
 
 			function removeComponent(node) {
@@ -131,10 +136,16 @@
 	// Allows users to provide a new foundation for functionality they want baked in.
 	Rome.Foundation = (function () {
 		var destroy = function (state) {
-			state = state || {};	
-			// We don't want a recursive find, so skip finding sub-components if parent initiated cleanup
-		 	eachReverse(this.$root.find('[data-rome]'), strats.destruct);
-			!state.domObserved && this.$root.remove();
+			state = state || {};
+			var root = this.root;
+
+		 	strats.destruct(this);
+
+		 	// All child components should be cleaned up along with the parent 
+		 	eachReverse($('[data-rome]', root), strats.destruct);
+
+		 	// If a domObserver picked up the removal there is no need to remove the node again
+			!state.domObserved && root.parentNode.removeChild(root);
 		};
 
 		return function Foundation(obj) {
@@ -176,8 +187,8 @@
 		//wasRomeBuilt && erectInstances($('[data-rome="' + baseComponent.name + '"]'));
 	};
 
-	function erectInstances($components) {
-		eachReverse($components, Rome.erect);
+	function erectInstances(components) {
+		eachReverse(components, Rome.erect);
 	}
 
 	var wasRomeBuilt = false;
@@ -204,7 +215,8 @@
 		if (!storedComponent.cachedComponent) {
 			function Component(root) {
 				this.root = root;
-				this.$root = $(root);
+				// We support jQuery-like libraries to allow for "advanced" manipulation of the dom
+				jQueryCompat && (this.$root = jQueryCompat(root));
 				
 				strats.construct(this);
 			}
@@ -225,6 +237,8 @@
 	Rome.Empire;
 	//@TODO: Routing?
 	Rome.Roads;
+	//@TODO: Binding? Use Event Delegation? Copy Derby?
+	Rome.Allegiance
 
 	//@TODO support AMD/Common
 	this.Rome = Rome;
