@@ -1,4 +1,4 @@
-// Rome 0.5.0
+// Rome 0.5.1
 // ==========
 // "Opinions are good, only when I agree with them." This is Rome's entire philosophy to development.
 
@@ -11,14 +11,27 @@
 // - Rome should have no dependencies, if possible, unless the library is small enough one could embed or it is so popular it is a "standard"
 
 (function () {
-	var body = document.body,
+	var self = this,
 		jQueryCompat = self.jQuery || self.Zepto,
+		body,	
 		// Currently even IE8 supports our use of querySelectorAll, so we'll use this internally instead
-		$ = function (selector, context) { return (context || body).querySelectorAll(selector); };
+		$ = function (selector, context) { 
+			var nodeList = (context || body || (body = document.body)).querySelectorAll(selector); 
+			
+			// Convert NodeList to a real array to make operations easier.
+			// Based on http://jsperf.com/nodelist-to-array/24 - Terse While new Array
+			var len = nodeList.length,
+			    arr = new Array(len);
+			while (len--) {
+			  arr[len] = nodeList[len]
+			}
 
-	function nope(){}
-	
-	function Rome() {}
+			return arr;
+		};
+
+	function nope() { }
+
+	function Rome() { }
 
 	//Potential for supporting multiple registries within Rome?
 	function Registry() {
@@ -31,19 +44,18 @@
 
 	// `NodeList.forEach` doesn't work, so might as well make our own more efficient forEach
 	function each(arr, cb) {
-	    for (var i = 0, len = arr.length; i < len; ++i) {
-	      cb(arr[i]);
-	    }
- 	}
+		for (var i = 0, len = arr.length; i < len; ++i) {
+			cb(arr[i]);
+		}
+	}
 
- 	function eachReverse(arr, cb) {
-	    for (var i = arr.length - 1; i >= 0; --i) {
-	      cb(arr[i]);
-	    }
- 	}
+	function eachReverse(arr, cb) {
+		for (var i = arr.length - 1; i >= 0; --i) {
+			cb(arr[i]);
+		}
+	}
 
 	// Should be a reference to the window object for now
-	var self = this;
 	Registry.prototype = {
 		// Used during `Rome.erect` to get the planned component
 		findComponent: function (name) {
@@ -71,6 +83,11 @@
 
 	var reg = Rome.Registry = new Registry();
 
+	function getInstance(obj) {
+		var romeData = obj._rome;
+		return romeData.mixins ? obj : romeData.component;
+	}
+
 	//@TODO add setter to manipulate $ if set later defineProperty
 	//var $ = Rome.$ = self.jQuery || self.Zepto || self.$;
 
@@ -86,48 +103,54 @@
 
 		// Handles all DOM changes as to automatically wire-up and destroy components
 		domObserver: function () {
-			function addComponent(node) {
-				node = node.target || node;				
+			function erect(node) {
+				node = node.target || node;
 
-				var componentName = node.getAttribute && node.getAttribute('data-rome');
-				!node._rome && componentName && erectInstances($('[data-rome]', node));
+				var romeComponentName = node.getAttribute && node.getAttribute('data-rome');
+				!node._rome && romeComponentName && erectInstances($('[data-rome]', node).concat(node))
 			}
 
-			function removeComponent(node) {
+			function destroy(node) {
 				var domRomeData = (node.target || node)._rome;
 				domRomeData && domRomeData.component.destroy({ domObserved: true })
 			}
 
 			var MutationObserver = self.MutationObserver || self.WebKitMutationObserver;
 			if (MutationObserver) {
-				var observer = new MutationObserver(function(mutations) {
+				var observer = new MutationObserver(function (mutations) {
 					eachReverse(mutations, function (mutation) {
-						eachReverse(mutation.addedNodes, addComponent);
-						eachReverse(mutation.removedNodes, removeComponent);
+						eachReverse(mutation.addedNodes, erect);
+						eachReverse(mutation.removedNodes, destroy);
 					});
-				 }); 
-	 
+				});
+
 				observer.observe(document.body, { subtree: true, childList: true });
 			}
 			else {
-				document.body.addEventListener('DOMNodeInserted', addComponent, false);
-				document.body.addEventListener('DOMNodeRemoved', removeComponent, false);
+				document.body.addEventListener('DOMNodeInserted', erect, false);
+				document.body.addEventListener('DOMNodeRemoved', destroy, false);
 			}
 		},
 
-		destruct: function (instance) {
-			// All components can provide a destructor, which is modeled after C++ `~ComponentName`
-			each(instance._rome.mixins, function (mixin) { 
-				var mixinDestructor; 
-				(mixinDestructor = instance['~' + mixin._rome.name]) && mixinDestructor();
+		destruct: function (obj) {
+			//Instance can either be a DOM element or a Rome Component instance
+			obj = getInstance(obj);
+
+			// All components can provide a destructor, which is modeled after C++/C# `~ComponentName`
+			each(obj._rome.mixins, function (mixin) {
+				var destructorName = '~' + mixin._rome.name;
+				obj[destructorName] && obj[destructorName]();
 			});
 		},
 
-		construct: function (instance) {
+		construct: function (obj) {
+			//Instance can either be a DOM element or a Rome Component instance
+			obj = getInstance(obj);
+
 			// Executes each mixin's constructor function, if one exists, which is based on the mixin's name
-			eachReverse(instance._rome.mixins, function (mixin) { 
-				var mixinConstructor;
-				(mixinConstructor = instance[mixin._rome.name]) && mixinConstructor(); 
+			eachReverse(obj._rome.mixins, function (mixin) {
+				var constructorName = mixin._rome.name;
+				obj[constructorName] && obj[constructorName]();
 			});
 		}
 	};
@@ -139,19 +162,21 @@
 			state = state || {};
 			var root = this.root;
 
-		 	strats.destruct(this);
+			// All child components should be cleaned up along with the parent 
+			eachReverse($('[data-rome]', root).concat(root), strats.destruct);
 
-		 	// All child components should be cleaned up along with the parent 
-		 	eachReverse($('[data-rome]', root), strats.destruct);
-
-		 	// If a domObserver picked up the removal there is no need to remove the node again
+			// If a domObserver picked up the removal there is no need to remove the node again
 			!state.domObserved && root.parentNode.removeChild(root);
 		};
-
-		return function Foundation(obj) {
+		
+		function Foundation(obj) {
 			var proto = obj.prototype;
 			proto.destroy = destroy;
 		};
+
+		Foundation._rome = { name: 'Foundation' };
+
+		return Foundation;
 	})();
 
 	// Before you can erect a component you must plan for it.
@@ -163,10 +188,10 @@
 	Rome.plan = function (baseComponent, mixins, name) {
 		// An anonymous function to merge all mixins into, so that the baseComponent 
 		// can be the last mixin merged into the base
-		var base = function () {};
+		var base = function () { };
 
 		// We store the component name as a static to always make it easily accessible
-		baseComponent._rome ||	(baseComponent._rome = { name: name });
+		baseComponent._rome || (baseComponent._rome = { name: name });
 
 		mixins = (mixins || []).concat(strats.autoMixins);
 
@@ -217,7 +242,7 @@
 				this.root = root;
 				// We support jQuery-like libraries to allow for "advanced" manipulation of the dom
 				jQueryCompat && (this.$root = jQueryCompat(root));
-				
+
 				strats.construct(this);
 			}
 
