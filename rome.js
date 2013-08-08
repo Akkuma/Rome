@@ -1,4 +1,4 @@
-// Rome 0.5.1
+// Rome 0.6.0
 // ==========
 // "Opinions are good, only when I agree with them." This is Rome's entire philosophy to development.
 
@@ -13,17 +13,20 @@
 (function () {
 	var self = this,
 		jQueryCompat = self.jQuery || self.Zepto,
-		body,	
+		body,
 		// Currently even IE8 supports our use of querySelectorAll, so we'll use this internally instead
-		$ = function (selector, context) { 
-			var nodeList = (context || body || (body = document.body)).querySelectorAll(selector); 
-			
+		$ = function (selector, context) {
+			context = (context || body || (body = document.body));
+			if (!context.querySelectorAll) return [];
+
+			var nodeList = context.querySelectorAll(selector);
+
 			// Convert NodeList to a real array to make operations easier.
 			// Based on http://jsperf.com/nodelist-to-array/24 - Terse While new Array
 			var len = nodeList.length,
-			    arr = new Array(len);
+				arr = new Array(len);
 			while (len--) {
-			  arr[len] = nodeList[len]
+				arr[len] = nodeList[len]
 			}
 
 			return arr;
@@ -36,10 +39,6 @@
 	//Potential for supporting multiple registries within Rome?
 	function Registry() {
 		this.componentsLookup = {};
-		/*
-		this.components = [];
-		this.instances = {};
-		*/
 	}
 
 	// `NodeList.forEach` doesn't work, so might as well make our own more efficient forEach
@@ -65,18 +64,12 @@
 			var name = component._rome.name;
 			if (this.componentsLookup[name]) return;
 
-			//this.components.push(component);
 			this.componentsLookup[name] = { base: base, mixins: mixins };
 		},
-		//@TODO: Change to store on the actual element rather than in memory?
 		findInstance: function (root) {
-			return root._rome //|| this.instances[root];
+			return root._rome;
 		},
 		addInstance: function (root, componentName, instance) {
-			//@TODO: Determine whether or not we need to maintain a list of instances 
-			//or if living on the root element is good enough
-			//this.instances[componentName] || (this.instances[componentName] = [])
-			//this.instances[componentName].push(instance);
 			root._rome = { component: instance };
 		}
 	};
@@ -87,9 +80,6 @@
 		var romeData = obj._rome;
 		return romeData.mixins ? obj : romeData.component;
 	}
-
-	//@TODO add setter to manipulate $ if set later defineProperty
-	//var $ = Rome.$ = self.jQuery || self.Zepto || self.$;
 
 	// Strategies are a minimal abstraction/transformation layer
 	// that will allow users to replace the OOBE of Rome.
@@ -106,8 +96,13 @@
 			function erect(node) {
 				node = node.target || node;
 
-				var romeComponentName = node.getAttribute && node.getAttribute('data-rome');
-				!node._rome && romeComponentName && erectInstances($('[data-rome]', node).concat(node))
+				// The node may not be a component, but it may contain other components
+				var children = $('[data-rome]', node);
+				if (node.getAttribute && node.getAttribute('data-rome')) {
+					children = children.concat(node);
+				}
+
+				erectInstances(children);
 			}
 
 			function destroy(node) {
@@ -127,6 +122,7 @@
 				observer.observe(document.body, { subtree: true, childList: true });
 			}
 			else {
+				//@TODO: Throttle calls as to pass a single array of nodes once
 				document.body.addEventListener('DOMNodeInserted', erect, false);
 				document.body.addEventListener('DOMNodeRemoved', destroy, false);
 			}
@@ -136,6 +132,7 @@
 			//Instance can either be a DOM element or a Rome Component instance
 			obj = getInstance(obj);
 
+			//@TODO: Add in recursive mixin walking
 			// All components can provide a destructor, which is modeled after C++/C# `~ComponentName`
 			each(obj._rome.mixins, function (mixin) {
 				var destructorName = '~' + mixin._rome.name;
@@ -147,6 +144,7 @@
 			//Instance can either be a DOM element or a Rome Component instance
 			obj = getInstance(obj);
 
+			//@TODO: Add in recursive mixin walking 
 			// Executes each mixin's constructor function, if one exists, which is based on the mixin's name
 			eachReverse(obj._rome.mixins, function (mixin) {
 				var constructorName = mixin._rome.name;
@@ -162,16 +160,22 @@
 			state = state || {};
 			var root = this.root;
 
+			// Component is manually handling itself, at least for now
+			if (root._rome.isExiled) return;
+
 			// All child components should be cleaned up along with the parent 
 			eachReverse($('[data-rome]', root).concat(root), strats.destruct);
 
 			// If a domObserver picked up the removal there is no need to remove the node again
 			!state.domObserved && root.parentNode.removeChild(root);
 		};
-		
+
+		var exile = function (isExiled) { Rome.exile(this, isExiled); };
+
 		function Foundation(obj) {
 			var proto = obj.prototype;
 			proto.destroy = destroy;
+			proto.exile = exile;
 		};
 
 		Foundation._rome = { name: 'Foundation' };
@@ -191,7 +195,7 @@
 		var base = function () { };
 
 		// We store the component name as a static to always make it easily accessible
-		baseComponent._rome || (baseComponent._rome = { name: name });
+		base._rome = baseComponent._rome || (baseComponent._rome = { name: name });
 
 		mixins = (mixins || []).concat(strats.autoMixins);
 
@@ -207,9 +211,7 @@
 
 		reg.addComponent(base, baseComponent, mixins);
 
-		// If Rome has already been built we want to instantly erect the newly planned component
-		//@TODO: Determine whether this is even needed with MutationObservers
-		//wasRomeBuilt && erectInstances($('[data-rome="' + baseComponent.name + '"]'));
+		return base;
 	};
 
 	function erectInstances(components) {
@@ -248,7 +250,7 @@
 
 			// Finally adds in everything from the base component's `prototype` before creating a new component instance
 			Component.prototype = storedComponent.base.prototype;
-			// Makes looking up a component's mixins extremely easy
+			// Makes looking up a component's mixins easy and we don't want to duplicate the mixins list on each instance
 			Component.prototype._rome = { mixins: storedComponent.mixins };
 			// Cache this Rome.Component, so that creating numerous instances doesn't require recreating the function
 			storedComponent.cachedComponent = Component;
@@ -258,12 +260,18 @@
 		reg.addInstance(root, romeComponentName, new storedComponent.cachedComponent(root));
 	};
 
+	Rome.exile = function (component, isExiled) {
+		component.root._rome.isExiled = typeof isExiled == 'undefined' ? true : isExiled
+	};
+
 	//@TODO: Global PubSub?
 	Rome.Empire;
 	//@TODO: Routing?
 	Rome.Roads;
 	//@TODO: Binding? Use Event Delegation? Copy Derby?
 	Rome.Allegiance
+
+	//@TODO Alias elements? https://github.com/tenbits/mask-compo
 
 	//@TODO support AMD/Common
 	this.Rome = Rome;
