@@ -1,4 +1,4 @@
-// Rome 0.6.0
+// Rome 0.7.0
 // ==========
 // "Opinions are good, only when I agree with them." This is Rome's entire philosophy to development.
 
