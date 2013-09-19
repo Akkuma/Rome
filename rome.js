@@ -61,7 +61,7 @@
 			return this.componentsLookup[name];
 		},
 		addComponent: function (base, component, mixins) {
-			var name = component._rome.name;
+			var name = component._name;
 			if (this.componentsLookup[name]) return;
 
 			this.componentsLookup[name] = { base: base, mixins: mixins };
@@ -135,7 +135,7 @@
 			//@TODO: Add in recursive mixin walking
 			// All components can provide a destructor, which is modeled after C++/C# `~ComponentName`
 			each(obj._rome.mixins, function (mixin) {
-				var destructorName = '~' + mixin._rome.name;
+				var destructorName = '~' + mixin._name;
 				obj[destructorName] && obj[destructorName]();
 			});
 		},
@@ -147,7 +147,7 @@
 			//@TODO: Add in recursive mixin walking 
 			// Executes each mixin's constructor function, if one exists, which is based on the mixin's name
 			eachReverse(obj._rome.mixins, function (mixin) {
-				var constructorName = mixin._rome.name;
+				var constructorName = mixin._name;
 				obj[constructorName] && obj[constructorName]();
 			});
 		}
@@ -178,7 +178,7 @@
 			proto.exile = exile;
 		};
 
-		Foundation._rome = { name: 'Foundation' };
+		Foundation._name = 'Foundation';
 
 		return Foundation;
 	})();
@@ -187,7 +187,7 @@
 	// `baseComponent` is what Rome will be creating instances of via `[data-rome]`.
 	// The `mixins` is an array of all the functionality you want in a component.
 	// `name` is what you want your component known as. 
-	// This must be provided if `baseComponent._rome.name` is not set.
+	// This must be provided if `baseComponent._name` is not set.
 	// Unforuntately, minification might mangle the function name, so we had to resort to being explicit
 	Rome.plan = function (baseComponent, mixins, name) {
 		// An anonymous function to merge all mixins into, so that the baseComponent 
@@ -195,7 +195,7 @@
 		var base = function () { };
 
 		// We store the component name as a static to always make it easily accessible
-		base._rome = baseComponent._rome || (baseComponent._rome = { name: name });
+		base._name = baseComponent._name || (baseComponent._name = name);
 
 		mixins = (mixins || []).concat(strats.autoMixins);
 
